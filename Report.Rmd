@@ -1,0 +1,8 @@
+# Title
+
+## Synopsis (no more than 10 sentences)
+
+## Data Processing (at least one figure but no more than 3)
+
+## Results
+
