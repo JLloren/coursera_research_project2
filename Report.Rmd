@@ -1,8 +1,113 @@
+```{r}
+
+library(lattice)
+require(grDevices)
+
+```
+
 # Title
 
 ## Synopsis (no more than 10 sentences)
 
 ## Data Processing (at least one figure but no more than 3)
 
+```{r unzipAndLoad, cache=TRUE}
+
+fullData <- read.csv("StormData.csv.bz2", strip.white=TRUE)
+
+```
+
+```{r restrictColumns, cache=TRUE} 
+
+columnsToInclude <- c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP", "WFO", "REFNUM")
+
+simpleData <- fullData[, columnsToInclude]
+
+```
+
+```{r fatalitiesPlusInjuries}
+
+simpleData[,"CASUALTIES"] <- simpleData$INJURIES + simpleData$INJURIES
+
+casualtiesVsType <- aggregate(simpleData$CASUALTIES, by=list(simpleData$EVTYPE), FUN=mean, na.rm=TRUE)
+
+names(casualtiesVsType) = c("EVTYPE", "CASUALTIES")
+
+casualtiesVsType = casualtiesVsType[which(casualtiesVsType$CASUALTIES > 15),]
+
+```
+
+```{r plotCasualtiesVsType, fig.height=6}
+
+barchart(CASUALTIES ~ EVTYPE,
+         data = casualtiesVsType,
+         scales = list(x=list(rot=45)),
+         ylim = range(casualtiesVsType$CASUALTIES, na.rm = TRUE)
+         )
+
+```
+
+```{r calculateDollars}
+
+calculateDollars <- function(base, exponent) {
+  dollars = NA
+  
+  if (exponent == "K") {
+    dollars = base * 1000
+  } else if (exponent == "M") {
+    dollars = base * 1000000
+  } else if (exponent == "B") {
+    dollars = base * 1000000000
+  } else if (exponent == "H") {
+    dollars = base * 100
+  } else {
+    dollars = base * 1000
+  }
+  dollars
+}
+
+```
+
+```{r calculateDollarDamages}
+
+simpleData <- cbind(simpleData, PROPDOLLARS = NA, CROPDOLLARS = NA, TOTALDOLLARS = NA)
+
+simpleData$PROPDOLLARS <- calculateDollars(simpleData$PROPDMG, simpleData$PROPDMGEXP)
+
+simpleData$CROPDOLLARS <- calculateDollars(simpleData$CROPDMG, simpleData$CROPDMGEXP)
+
+simpleData$TOTALDOLLARS <- simpleData$PROPDOLLARS + simpleData$CROPDOLLARS
+simpleData$TOTALDOLLARSK <- simpleData$TOTALDOLLARS / 1000
+
+```
+
+```{r totalDamages}
+
+damageVsType <- aggregate(simpleData$TOTALDOLLARSK, by=list(simpleData$EVTYPE), FUN=mean, na.rm=TRUE)
+
+names(damageVsType) = c("EVTYPE", "TOTALDOLLARSK")
+
+damageVsType = damageVsType[which(damageVsType$TOTALDOLLARSK > 500),]
+
+```
+
+```{r plotDamagesVsType, fig.height=6}
+
+barchart(TOTALDOLLARSK ~ EVTYPE,
+         data = damageVsType,
+         scales = list(x=list(rot=45)),
+         ylim = range(damageVsType$TOTALDOLLARSK, na.rm = TRUE)
+         )
+
+```
+
 ## Results
+### Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+Heat waves have the highest mean number of casualties (where casualties are defined as either injuries or deaths). 
+
+### Across the United States, which types of events have the greatest economic consequences?
+
+
+
 
